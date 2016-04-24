@@ -19,9 +19,8 @@
 
 namespace DoctrineModule\ServiceFactory;
 
-use Zend\ServiceManager\AbstractFactoryInterface;
-use Zend\ServiceManager\Exception\ServiceNotFoundException;
-use Zend\ServiceManager\ServiceLocatorInterface;
+use Interop\Container\ContainerInterface;
+use Zend\ServiceManager\Factory\AbstractFactoryInterface;
 
 /**
  * Abstract service factory capable of instantiating services whose names match the
@@ -36,17 +35,18 @@ class AbstractDoctrineServiceFactory implements AbstractFactoryInterface
     /**
      * {@inheritDoc}
      */
-    public function canCreateServiceWithName(ServiceLocatorInterface $serviceLocator, $name, $requestedName)
+    public function canCreate(ContainerInterface $container, $requestedName)
     {
-        return false !== $this->getFactoryMapping($serviceLocator, $requestedName);
+        return false !== $this->getFactoryMapping($container, $requestedName);
     }
 
     /**
      * {@inheritDoc}
      */
-    public function createServiceWithName(ServiceLocatorInterface $serviceLocator, $name, $requestedName)
+    public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
     {
-        $mappings = $this->getFactoryMapping($serviceLocator, $requestedName);
+        print_r($options);die;
+        $mappings = $this->getFactoryMapping($container, $requestedName);
 
         if (! $mappings) {
             throw new ServiceNotFoundException();
@@ -56,16 +56,16 @@ class AbstractDoctrineServiceFactory implements AbstractFactoryInterface
         /* @var $factory \DoctrineModule\Service\AbstractFactory */
         $factory = new $factoryClass($mappings['serviceName']);
 
-        return $factory->createService($serviceLocator);
+        return $factory->createService($container);
     }
 
     /**
-     * @param \Zend\ServiceManager\ServiceLocatorInterface $serviceLocator
+     * @param \Zend\ServiceManager\ServiceLocatorInterface $container
      * @param string                                       $name
      *
      * @return bool|array
      */
-    private function getFactoryMapping(ServiceLocatorInterface $serviceLocator, $name)
+    private function getFactoryMapping(ContainerInterface $container, $name)
     {
         $matches = array();
 
@@ -77,7 +77,7 @@ class AbstractDoctrineServiceFactory implements AbstractFactoryInterface
             return false;
         }
 
-        $config      = $serviceLocator->get('Config');
+        $config      = $container->get('Config');
         $mappingType = $matches['mappingType'];
         $serviceType = $matches['serviceType'];
         $serviceName = $matches['serviceName'];
